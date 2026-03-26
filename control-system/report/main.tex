@@ -1,0 +1,984 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[margin=3cm]{geometry}
+\usepackage[]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\geometry{a4paper, top=2cm, bottom=3cm, left=1.5cm, right=1.5cm, heightrounded, bindingoffset=5mm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{gensymb}
+\usepackage{graphicx}
+\usepackage{psfrag,amsmath,amsfonts,verbatim}
+\usepackage{xcolor}
+\usepackage{color,soul}
+\usepackage{fancyhdr}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{newlfont}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{latexsym}
+\usepackage{amsthm}
+%\usepackage{subfigure}
+\usepackage{subcaption}
+\usepackage{psfrag}
+\usepackage{footnote}
+\usepackage{graphics}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{float}
+
+
+\usetikzlibrary{snakes}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes,arrows}
+
+	
+	\tikzstyle{block} = [draw, fill=white, rectangle, 
+	minimum height=3em, minimum width=6em]
+	\tikzstyle{sum} = [draw, fill=white, circle, node distance=1cm]
+	\tikzstyle{input} = [coordinate]
+	\tikzstyle{output} = [coordinate]
+	\tikzstyle{pinstyle} = [pin edge={to-,thin,black}]
+
+\newcommand{\courseacronym}{CAT}
+\newcommand{\coursename}{Controlli Automatici - T}
+\newcommand{\tipology}{C }
+\newcommand{\trace}{1}
+\newcommand{\projectname}{Controllo di meccanismo non-lineare attuato}
+\newcommand{\group}{3 }
+
+%opening
+\title{ \vspace{-1in}
+		\huge \strut \coursename \strut 
+		\\
+		\Large  \strut Progetto Tipologia \tipology - Traccia \trace
+		\\
+		\Large  \strut \projectname\strut
+		\\
+		\Large  \strut Gruppo \group\strut
+		\vspace{-0.4cm}
+}
+\author{Ester Bravaccini, Camilla Manaresi, Simran Singh}
+\date{}
+
+\begin{document}
+
+\maketitle
+\vspace{-0.5cm}
+
+Il progetto riguarda il controllo di un meccanismo non-lineare attuato, la cui dinamica viene descritta 
+
+dalla seguente equazione differenziale 
+%
+\begin{subequations}\label{eq:system}
+\begin{align}
+    J(\theta)\dot{\omega} = C_m - \beta\omega - k\theta, \\
+    \text{dove }
+    J(\theta) = J_0 + \sum_{i=1}^{4} J_i \cos(i\theta + \psi_i)
+\end{align}
+\end{subequations}
+%
+
+in cui:
+    \begin{itemize}
+     \item il momento d'inerzia ridotto al movente \( J(\theta) \) è una funzione periodica di periodo \( 2\pi \);
+     \item si assume che \( J(\theta) \) sia già stata ricavata e approssimata a una somma di armoniche;
+    \item \( C_m \) rappresenta la coppia generata dal motore elettrico;
+    \item si considerano infine anche l'attrito viscoso (coefficiente \( \beta \)) e l'elasticità del disco (coefficiente \( k \)).
+\end{itemize}
+
+Si suppone di poter misurare l’angolo \(\theta (t)\) del sistema, ma non la velocità angolare \(\omega (t)\). Inoltre, si 
+
+suppone di poter agire sul sistema tramite la coppia di controllo \( C_m \).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{immagini/Figure_0.png}
+    \caption{Schema illustrativo del sistema meccanico motorizzato.}
+    \label{fig:fig0}
+\end{figure} 
+
+I valori numerici dei parametri del sistema sono riportati in Tabella~\ref{tab:system_parameters}.
+
+\begin{table}[H]
+\centering
+    %\fbox{\parbox{0.35\textwidth}{\vspace{1.9cm} Placeholder \vspace{1.9cm}}}%
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Parametro} & \textbf{Valore} \\
+\hline
+$k$ & $50$ \\
+$\beta$ & $1$ \\
+$J_0$ & $1.7$ \\
+$J_1$ & $0.1$ \\
+$J_2$ & $0.7$ \\
+$J_3$ & $0.09$ \\
+$J_4$ & $0.02$ \\
+$\psi_1$ & $-0.04$ \\
+$\psi_2$ & $2.9$ \\
+$\psi_3$ & $2.8$ \\
+$\psi_4$ & $-2.6$ \\
+$\theta_e$ & $\pi/3$ \\
+\hline
+\end{tabular}
+\caption{Parametri del sistema}
+\label{tab:system_parameters}
+\end{table}
+
+\section{Espressione del sistema in forma di stato e calcolo del sistema linearizzato intorno ad una coppia di equilibrio}
+
+Innanzitutto, esprimiamo il sistema~\eqref{eq:system} nella seguente forma di stato:
+%
+\begin{subequations}
+\begin{align}\label{eq:state_form}
+	\dot{x} &= f(x,u)
+	\\
+	y &= h(x,u).
+\end{align}
+\end{subequations}
+%
+
+Pertanto, procediamo a individuare lo stato $x$, l'ingresso $u$ e l'uscita $y$ del sistema come segue.
+
+
+Analizziamo che: 
+\begin{itemize}
+  \item i parametri \(k\), \(\beta\), \(J_0\), \(J_i\) e \(\psi_i\), con \(i = 1,\ldots,4\), sono parametri costanti;
+  \item la variabile \(C_m\) è fornita direttamente dal problema come ingresso di controllo e rappresenta la coppia generata dal motore elettrico;
+  \item la variabile \(\theta(t)\) rappresenta la posizione angolare del sistema ed è l’unica grandezza misurabile, pertanto costituisce l’uscita del sistema.
+\end{itemize}
+
+Sulla base di tali considerazioni, si giunge alle seguenti conclusioni:
+\begin{itemize}
+    \item la variabile di ingresso \(u(t)\) è rappresentata dalla coppia di controllo \(C_m\), grandezza scalare;
+    \item la variabile di stato \(x(t)\) è costituita da due componenti, posizione e velocità angolare, ed è pertanto definita come
+    \[
+    x =
+    \begin{bmatrix}
+        x_1 \\
+        x_2
+    \end{bmatrix},
+    \qquad
+    \text{con } x_1 := \theta, \; x_2 := \omega;
+    \]
+    \item la variabile di uscita \(y(t)\) coincide con la grandezza misurata dal sensore ed è pertanto definita come
+    \[
+    y(t) = x_1 = \theta,
+    \]
+    che rappresenta l’angolo di rotazione del sistema.
+\end{itemize}
+
+Quindi:
+%
+\begin{align*}
+	x := \begin{bmatrix}
+		{x}_1
+		\\
+		{x}_2
+	\end{bmatrix} &:= \begin{bmatrix}
+	    \theta
+        \\
+        \omega
+	\end{bmatrix}, \quad 
+    u :=  C_{m}, \quad 
+    y := x_1 := \theta .
+\end{align*}
+%
+
+Coerentemente con questa scelta, ricaviamo dal sistema~\eqref{eq:system} la seguente espressione per le funzioni $f$ 
+
+ed $h$, in particolare: 
+%
+\begin{align*}
+\dot{x}_1 = f_1(x_1, x_2, u),
+\\
+\dot{x}_2 = f_2(x_1, x_2, u),
+\end{align*}
+%
+%
+\begin{align*}
+	f(x,u) &:= \begin{bmatrix}
+	   f_1(x_1, x_2,u)
+       \\
+   f_2(x_1, x_2,u)
+	\end{bmatrix} := \begin{bmatrix}
+	    \dot{\theta}
+        \\
+        \dot{\omega} 
+	\end{bmatrix} = \begin{bmatrix}
+	    x_{2}
+        \\
+        \frac{u - \beta x_{2} - kx_{1}}{J_0 + \sum_{i=1}^{4} J_i \cos(i x_1 + \psi_i)}
+	\end{bmatrix},
+	\\
+	h(x,u) &:= \theta := x_1.
+\end{align*}
+%
+
+Una volta calcolate $f$ ed $h$, esprimiamo~\eqref{eq:system} nella seguente forma di stato
+%
+\begin{subequations}\label{eq:our_system_state_form}
+\begin{align}
+	\begin{bmatrix}
+		\dot{x}_1
+		\\
+		\dot{x}_2
+	\end{bmatrix} &= \begin{bmatrix}
+	    x_{2}
+        \\
+        \frac{u - \beta x_{2} - kx_{1}}{J_0 + \sum_{i=1}^{4} J_i \cos(i x_1 + \psi_i)}
+	\end{bmatrix}\label{eq:state_form_1}
+	\\
+	y &= x_{1}.
+\end{align}
+\end{subequations}
+%
+
+Per trovare la coppia di equilibrio in sistemi LTI continui, se vale $f(x_e, u_e) = 0$, allora $(x_e, u_e)$ è una 
+
+coppia di equilibrio. Il progetto in analisi rientra nel caso riportato.
+\\
+
+
+Considerando il valore di equilibrio dato $\theta_{e} = x_{1e} =\pi/3$, andiamo a risolvere il seguente sistema di 
+
+equazioni: 
+
+%
+\begin{align} \begin{bmatrix}
+		\dot{x}_1
+		\\
+		\dot{x}_2
+	\end{bmatrix} = 
+	\begin{bmatrix}
+	    0
+        \\
+        0
+	\end{bmatrix} = \begin{bmatrix}
+	    x_{2e}
+        \\
+        \frac{u_e - \beta x_{2e}-kx_{1e}}{J_0 + \sum_{i=1}^{4} J_i \cos(i x_{1e} + \psi_i)}
+	\end{bmatrix}= 
+    \begin{bmatrix}
+         0
+        \\
+        \frac{u_e - 1\cdot0-50\cdot\pi/3}{1.7+0.1\cdot cos(1\cdot\pi/3-0.04)+0.7\cdot cos(2\cdot \pi/3+2.9)+0.09\cdot cos(3\cdot \pi/3+2.8)+0.02\cdot cos(4\cdot \pi/3-2.6)}
+    \end{bmatrix}
+\end{align}
+%
+
+dal quale otteniamo
+%
+\begin{align}
+	x_e := \begin{bmatrix}
+	    \pi/3
+        \\
+        0
+	\end{bmatrix},  \quad u_e = k\pi/3 \approx 52.36.\label{eq:equilibirum_pair}
+\end{align}
+%
+
+Definiamo le variabili alle variazioni $\delta x$, $\delta u$ e $\delta y$ come 
+%
+\begin{align*}
+	\delta x &= x-x_e, 
+	\quad
+	\delta u = u-u_e, 
+	\quad
+	\delta y = y-y_e.
+\end{align*}
+%
+
+L'evoluzione del sistema espressa nelle variabili alle variazioni pu\`o essere approssimativamente 
+
+descritta mediante il seguente sistema lineare
+%
+\begin{subequations}\label{eq:linearized_system}
+\begin{align}
+	\delta \dot{x} &= A\delta x + B\delta u
+	\\
+	\delta y &= C\delta x + D\delta u,
+\end{align}
+\end{subequations}
+%
+
+dove le matrici $A$, $B$, $C$ e $D$ vengono calcolate come
+%
+\begin{subequations}\label{eq:matrices}
+\begin{align}
+	A &= \begin{bmatrix}
+\dfrac{\partial f_1(x,u)}{\partial x_1} & \dfrac{\partial f_1(x,u)}{\partial x_2} \\
+\dfrac{\partial f_2(x,u)}{\partial x_1} & \dfrac{\partial f_2(x,u)}{\partial x_2}
+\end{bmatrix}_{\substack{x = x_e \\ u = u_e}}
+=
+\begin{bmatrix}
+0 & 1 \\
+-\frac{kJ(x_{1e})}{[J(x_{1e})]^2} & -\frac{\beta}{J(x_{1e})}
+\end{bmatrix} \approx \begin{bmatrix}
+    0 & 1 
+    \\
+    -24.60 & -0.492
+\end{bmatrix}
+	\\
+	B &= \begin{bmatrix}
+\dfrac{\partial f_1(x,u)}{\partial u} \\
+\dfrac{\partial f_2(x,u)}{\partial u}
+\end{bmatrix}_{\substack{x = x_e \\ u = u_e}}
+=
+\begin{bmatrix}
+0 \\
+\frac{1}{J(x_{1e})}
+\end{bmatrix} \approx
+\begin{bmatrix}
+    0
+    \\
+    0.492
+\end{bmatrix}
+	\\
+	C &= \begin{bmatrix}
+\dfrac{\partial h(x,u)}{\partial x_1} &
+\dfrac{\partial h(x,u)}{\partial x_2}
+\end{bmatrix}_{\substack{x = x_e \\ u = u_e}}
+=
+\begin{bmatrix}
+1 & 0
+\end{bmatrix}
+	\\
+	D &= \begin{bmatrix}
+	    \dfrac{\partial h(x,u)}{\partial u} \end{bmatrix}_{\substack{x = x_e \\ u = u_e}}
+= \begin{bmatrix}
+    0
+\end{bmatrix}.
+\end{align}
+\end{subequations}
+%
+\section{Calcolo Funzione di Trasferimento}
+
+In questa sezione, andiamo a calcolare la funzione di trasferimento $G(s)$ dall'ingresso $\delta u$ all'uscita $\delta y$ 
+
+mediante la seguente formula 
+%
+%
+\begin{align}\label{eq:transfer_function}
+G(s) = C(sI-A)^{-1} B+D \approx \frac{0.492}{s^{2} + 0.492\,s + 24.6}.
+\end{align}
+%
+
+Dunque il sistema linearizzato~\eqref{eq:linearized_system} è caratterizzato dalla funzione di trasferimento~\eqref{eq:transfer_function} con due poli
+
+complessi coniugati $p_{1,2} = -\sigma \pm j \omega_d= -0.2460 \pm 4.9536\,j$ e nessuno zero. 
+
+Il sistema risulta asintoticamente stabile, in quanto la parte reale dei poli è negativa, pari a
+\[
+\Re\{p_{1,2}\} = -0.2460.
+\]
+
+
+Tuttavia, la presenza di poli complessi coniugati comporta una marcata componente oscillatoria nella 
+
+risposta dinamica del sistema, che include un andamento sinusoidale smorzato.
+
+Tale comportamento è ulteriormente accentuato dal basso valore del coefficiente di smorzamento 
+
+relativo \(\xi\), definito come
+\begin{align}
+\xi = \frac{\sigma}{\sqrt{\sigma^2 + \omega_d^2}},
+\end{align}
+
+
+il quale, nel caso in esame, assume il valore
+\begin{align}
+\xi \approx \frac{0.2460}{\sqrt{0.2460^2 + 4.9536^2}} \approx 0.0496.
+\end{align}
+
+Il ridotto smorzamento relativo indica che il sistema è fortemente sottosmorzato; di conseguenza, 
+
+la risposta al gradino è caratterizzata da una significativa sovraelongazione e da oscillazioni persistenti 
+
+prima del raggiungimento del regime stazionario.
+
+In Figura~\ref{fig:fig1} mostriamo
+il corrispondente diagramma di Bode.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{immagini/Figure_1.png}
+    \caption{Diagramma di Bode della funzione di trasferimento $G(s)$.}
+    \label{fig:fig1}
+\end{figure} 
+
+\label{sec:diagramma delle ampiezze}
+
+Possiamo ricavare dal grafico i seguenti parametri caratteristici del sistema:
+\begin{itemize}
+    \item Pulsazione naturale: $\omega_n \approx 4.96 \ \text{rad/s}$;
+    \item Guadagno statico: $K = 0.02 \; (\approx -34 \ \text{dB})$.
+\end{itemize}
+
+Tali valori possono essere verificati analiticamente a partire dai poli del sistema, fornendo una 
+
+conferma della correttezza delle stime ottenute graficamente.
+
+La pulsazione naturale è definita come
+\begin{align}
+\omega_n = \sqrt{\sigma^2 + \omega_d^2} \approx \sqrt{0.2460^2 + 4.9536^2} \approx 4.96 \ \text{rad/s},
+\end{align}
+
+in accordo con quanto osservato dal grafico.
+
+Il guadagno statico \(K\) può invece essere ricavato come valore della funzione di trasferimento in 
+
+continua, ovvero
+\begin{align}
+K = \lim_{s \to 0} G(s) = 0.02 \quad (\approx -34 \ \text{dB}),
+\end{align}
+
+coerentemente con l’ampiezza a bassa frequenza osservata nel diagramma di Bode.
+
+Analizzando il diagramma di Bode, per quanto riguarda il diagramma delle ampiezze possiamo notare 
+
+che:
+\begin{itemize}
+    \item A basse frequenze si ha un comportamento costante a $-34$ dB
+    \item Intorno a $\omega_n$ si ha un picco di risonanza molto pronunciato dovuto al basso coefficiente di smorzamento. 
+    \item Ad alte frequenze si ha una pendenza di $-40$ dB/decade 
+\end{itemize}
+
+Osserviamo invece che il diagramma delle fasi parte da $0^\circ$ nelle basse frequenze , per poi presentare 
+
+una rapida variazione intorno a $\omega_n$ e arrivare infine asintoticamente a $-180^\circ$ nelle alte frequenze.
+
+
+\section{Mappatura specifiche del regolatore}
+\label{sec:specifications}
+Le specifiche da soddisfare sono:
+\begin{itemize}
+	\item[1)] Errore a regime $|e_\infty| \le e^\ast = 0.04$ in risposta a un gradino $w(t) = W \cdot 1(t)$ e $d(t) = D \cdot 1(t)$ con ampiezze $W \le 1$ e $D \le 1$.
+	\item[2)] Margine di fase $M_f \ge 30^\circ$.
+	\item[3)] Sovraelongazione percentuale $S\% \le 10\%$.
+    \item[4)] Tempo di assestamento $T_{a, 5} = 0.008\,\text{s}$.
+    \item[5)] $d(t)$ attenuato di almeno  $30\,\text{dB}$ in $[0,\,0.5]$.
+	\item[6)] $n(t)$ attenuato di almeno  $65\,\text{dB}$ in $[5\cdot 10^{4},\,5\cdot 10^{6}]$.
+\end{itemize}
+%
+Andiamo ad effettuare la mappatura punto per punto delle specifiche richieste.
+\begin{itemize}
+	\item La specifica sull'errore a regime si traduce nella necessità di inserire un guadagno statico minimo.
+	\item Le specifiche 2) e 3) sono entrambe sul margine di fase. Andiamo perciò a soddisfare la specifica più stringente, la 3), ottenendo così $M_f \ge 59.12^\circ$.
+	\item Dalla specifica 4) sul tempo di assestamento $T_{a, 5}$ ricaviamo $\omega_c \geq \dfrac{300}{M_f\,T_{a,5}} \approx 634.35\ \mathrm{rad/s}$.
+    \item Dalla specifica 5) ricaviamo $|L(j\omega)|_{dB} \geq 30$dB in $[0, 0.5]$.
+\item Dalla specifica 6) ricaviamo $|L(j\omega)|_{dB} \leq -65$dB in $[5 \cdot 10^4, 5 \cdot10^6]$.
+\end{itemize}
+Pertanto, in Figura ~\ref{fig:fig2}, mostriamo il diagramma di Bode della funzione di trasferimento $G(s)$ con le zone proibite emerse dalla mappatura delle specifiche.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{immagini/Figure_2.png}
+    \caption{Diagramma di Bode di G(s) con zone proibite}
+    \label{fig:fig2}
+\end{figure}
+
+
+Si osserva da Figura ~\ref{fig:fig2} che la funzione di trasferimento non soddisfa autonomamente le specifiche 
+
+richieste. In particolare, il modulo presenta un andamento inadeguato nelle bande di 
+frequenza 
+
+critiche: a basse frequenze il guadagno risulta insufficiente per garantire l'attenuazione richiesta di 
+
+$65\,\text{dB}$, mentre la fase del sistema evidenzia un comportamento incompatibile con il margine di fase 
+
+$M_f \ge 59.12^\circ$ richiesto dalla specifica sulla sovraelongazione. Si rende pertanto indispensabile la 
+
+progettazione di un regolatore opportuno.
+
+\section{Sintesi del regolatore statico}
+\label{sec:static_regulator}
+
+In questa sezione progettiamo il regolatore statico $R_s(s)$ partendo dalle analisi svolte in sezione~\ref{sec:specifications}.
+
+
+L'obiettivo primario di questa componente è soddisfare le specifiche di bassa frequenza: l'errore a 
+
+regime e l'attenuazione del disturbo in uscita $d(t)$.
+
+Per determinare il valore di $R_s$ è necessario garantire che il guadagno della funzione d'anello $L(s)$ sia 
+
+sufficientemente elevato a basse frequenze, rispettando due vincoli distinti:
+\begin{itemize}
+    \item [1.]
+    Per soddisfare la specifica 1) sull’errore a regime dobbiamo tenere conto della relazione $e_\infty = \frac{W +D}{1+ L(0)}$: un valore elevato di $L(0)$ permette infatti di ridurre l'errore a regime.
+    Imponendo il vincolo $|e_\infty| \le e^\ast$ si trova che il guadagno di anello minimo necessario è il seguente 
+    \begin {equation}
+        \mu_{s,error} = \frac{D + W}{e^\ast} = 50
+    \end{equation}
+
+    \item[2.]
+    Parallelamente, occorre rispettare la specifica 5) sull'attenuazione del disturbo di uscita $A_d$. Per ottenere l'attenuazione richiesta alla frequenza del disturbo $\omega_{d,max}$, il modulo della funzione di anello $|L(j \omega_{d,max})|$ deve superare il valore lineare 
+     \begin {equation}
+        mu_{s,dist} = 10^{\frac{A_d}{20}} \approx 31.62
+    \end{equation}
+
+\end{itemize}
+
+Il valore di $R_s$ viene quindi determinato imponendo entrambi i vincoli e selezionando il più restrittivo 
+
+tra i due:
+
+\begin{subequations}
+\begin{align}
+  R_s = max(\frac{\mu_{s,error}}{|G(0)|}, \frac{\mu_{s,dist}}{|G(j\omega_{d,max}|}), \\
+    \end{align}
+\end{subequations}
+
+Dunque, definiamo la funzione estesa $G_e(s) = R_s(s)G(s)$ e, in Figura \ref{fig:fig3}, mostriamo il suo diagramma 
+
+di Bode per verificare se e quali zone proibite vengono ancora attraversate dal sistema.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{immagini/Figure_3.png}
+    \caption{Diagramma di Bode di $G_e(s)$ con zone proibite}
+    \label{fig:fig3}
+\end{figure}
+
+Dalla Figura~\ref{fig:fig3} si osserva che l’introduzione del regolatore statico ha consentito di
+soddisfare le 
+
+specifiche a bassa frequenza. In particolare, la funzione estesa $G_e(s)$ rispetta ora
+i vincoli sull’errore 
+
+a regime e sull’attenuazione del disturbo di uscita $A_d$, come evidenziato
+dal fatto che il modulo del 
+
+diagramma di Bode si colloca al di fuori delle zone proibite nelle
+bande di frequenza di interesse.
+
+Tuttavia, la sola introduzione del regolatore statico non è sufficiente a garantire il rispetto
+completo 
+
+di tutte le specifiche di progetto. In particolare, $G_e(s)$ non soddisfa ancora i
+vincoli imposti sul 
+
+margine di fase $M_f$ e sul tempo di assestamento $T_{a,5}$.
+\\
+
+Si rende pertanto necessario introdurre un regolatore dinamico, in grado di modificare
+
+opportunamente l’andamento della fase e del modulo della funzione di anello, così da fornire il
+
+recupero di fase richiesto, aumentare la pulsazione di attraversamento e consentire il
+raggiungimento 
+
+delle prestazioni dinamiche e di robustezza richieste dalle specifiche.
+
+\section{Sintesi del regolatore dinamico}
+\label{sec:dynamic_regulator}
+
+In questa sezione, progettiamo il regolatore dinamico $R_d(s)$. 
+%
+Dalle analisi fatte in Sezione~\ref{sec:static_regulator}, notiamo
+
+di essere nello Scenario di tipo B (specifiche a bassa frequenza rispettate ma sistema instabile per 
+
+margine di fase insufficiente e non abbastanza 
+veloce ). Dunque, progettiamo $R_d(s)$ ricorrendo ad 
+
+una rete anticipatrice e un filtro passa-basso per l'abbattimento del rumore nelle alte frequenze. 
+
+Per determinare i parametri della rete utilizziamo le formule d’inversione, che permettono di imporre 
+
+analiticamente il passaggio della funzione di anello per la pulsazione di attraversamento desiderata 
+
+$\omega_c^\ast$ con il margine di fase specifico $M_f^\ast$. 
+Tali valori sono stati scelti adottando un opportuno margine 
+
+di cautela rispetto ai vincoli minimi di progetto, al fine di garantire una maggiore robustezza:
+\begin{subequations}
+\begin{align}
+ M_f^\ast = M_{f,\text{spec}} + 10 \approx69,12\degree,
+\qquad \omega_c^\ast = 1.1 \cdot \omega_{c,min} \approx697,7 ~\text{rad/s}.
+\end{align}
+\end{subequations}
+
+Calcoliamo l'attenuazione $M^\ast$ e l'anticipo di fase $\varphi^\ast$ necessari a traslare la funzione d'anello $G_e(j\omega)$ 
+
+verso la pulsazione di attraversamento $\omega_c^\ast$ e il margine $M_f^\ast$ prefissati:
+\begin{equation}
+M^\ast = \frac{1}{|G_e(j\omega_c^\ast)|}, \quad \varphi^\ast = M_f^\ast - 180^\circ - arg( G_e(j\omega_c^\ast))
+\end{equation}
+
+
+A questo punto calcoliamo i parametri della rete $\tau$ e $\alpha$ con le formule di inversione:
+\begin{equation}
+\tau = \frac{M^\ast - \cos(\varphi^\ast)}{\omega_c^\ast \sin(\varphi^\ast)}, \quad \alpha\tau = \frac{\cos(\varphi^\ast) - \frac{1}{M^\ast}}{\omega_c^\ast \sin(\varphi^\ast)}
+\end{equation}
+
+Otteniamo così il modulo richiesto:
+\begin{equation}
+    R_d(s) = \frac{1 + \tau s}{1 + \alpha \tau s}.
+\end{equation}
+
+Infine per rispettare il vincolo sul disturbo $n(t)$, aggiungiamo un polo 
+ad alta frequenza:
+\[
+R_{\text{hf}}(s) = \frac{1}{1 + \tfrac{s}{9\cdot 10^4}},
+\]
+
+La forma finale del regolatore dinamico diventa perciò:
+\begin{equation}
+    R_d(s) = 
+    \frac{1 + \tau s}{1 + \alpha\tau s}
+    \cdot
+    \frac{1}{1 + \tfrac{s}{9\cdot 10^4}}.
+\end{equation}
+
+La funzione di anello chiuso risulta:
+\[
+L(s) = R_d(s)\,G_e(s).
+\]
+
+
+
+In Figura \ref{fig:fig4}, mostriamo il diagramma di Bode della funzione d'anello $L(s)$
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{immagini/Figure_4.png}
+    \caption{Diagramma di Bode della funzione di anello $L(s) = R_d(s)G_e(s)$.}
+    \label{fig:fig4}
+\end{figure}
+
+Dalla Figura ~\ref{fig:fig4} si osserva che la funzione di anello $L(s)$ evita correttamente tutte le zone
+proibite 
+
+individuate in fase di mappatura delle specifiche. In particolare, il modulo a bassa frequenza
+rimane 
+
+sufficientemente elevato da garantire il rispetto delle specifiche sull’errore a regime e
+sull’attenuazione 
+
+del disturbo $d(t)$, mentre la pulsazione di attraversamento risulta compatibile con
+il vincolo sul tempo 
+
+di assestamento $T_{a,5}=0.008$ s.
+
+
+Grazie all’azione della rete anticipatrice, la fase viene opportunamente incrementata in corrispondenza
+
+della nuova pulsazione $\omega_c^\ast$, consentendo di ottenere un margine di fase
+coerente con le specifiche di 
+
+stabilità relativa e tale da assicurare una risposta sufficientemente smorzata, con sovraelongazione 
+
+inferiore al $10\%$.
+
+Infine, l’introduzione del polo ad alta frequenza determina un rapido decadimento del modulo alle 
+
+alte frequenze, permettendo di soddisfare il requisito di attenuazione del rumore di misura $n(t)$ di 
+
+almeno $65$ dB nella banda assegnata, senza compromettere la stabilità del sistema.
+
+\section{Test sul sistema linearizzato}
+
+In questa sezione testiamo l'efficacia del controllore progettato sul sistema linearizzato. 
+In primo 
+
+luogo analizziamo le risposte del sistema al riferimento a gradino $w(t)$ e ai disturbi $n(t)$ e $d(t)$, definiti 
+
+come segue:
+\[
+w(t) = \mathbf{1}(t),
+\qquad
+d(t) = \sum_{k=1}^{4} \sin(0.1\,k\,t),
+\qquad
+n(t) = \sum_{k=1}^{4} \sin\!\left(5 \cdot 10^{4}\, k\, t\right).
+\]
+
+Successivamente, consideriamo la risposta del sistema linearizzato in termini dell’uscita complessiva 
+
+$y_{\text{tot}}$, ottenuta come somma delle singole risposte, facendo riferimento al principio di sovrapposizione 
+
+degli effetti.
+
+\vspace{1em} 
+Innanzitutto mostriamo in Figura~\ref{fig:fig5} lo schema a blocchi del sistema in anello chiuso.
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{immagini/Figure_5.png}
+    \caption{Schema a blocchi del sistema lineare}
+    \label{fig:fig5}
+\end{figure}
+
+\vspace{1em} 
+
+Di seguito in Figura~\ref{fig:fig6} è riportata la risposta del sistema linearizzato in anello chiuso a fronte di un 
+
+ingresso a gradino unitario $w(t) = 1$, ottenuta simulando $y_w(t) = F(s) \cdot w(t)$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{immagini/Figure_6.png}
+    \caption{Risposta del sistema al riferimento a gradino unitario}
+    \label{fig:fig6}
+\end{figure}
+
+Si nota che il sistema raggiunge il valore di regime unitario con un tempo di assestamento inferiore a 
+
+$T_{a,5} = 0.008$ s, soddisfacendo la specifica 4). La risposta presenta una sovraelongazione contenuta, al 
+
+di sotto del limite del $10\%$ imposto dalle specifiche. L'errore a regime è praticamente nullo, perciò 
+
+anche la specifica 1) $e_{reg} < 0.04$ viene rispettata.
+
+\vspace{1em} 
+
+Inoltre possiamo notare dalla seguente Figura~\ref{fig:fig7}  che i disturbi in attuazione $d(t)$, costituiti da una 
+
+somma di quattro armoniche a bassa frequenza ($\omega_d = 0.1$ rad/s e multipli), vengono efficacemente 
+
+attenuati dalla funzione di sensitività $S(s)$, come mostrato nella risposta $y_d(t) = S(s) \cdot d(t)$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{immagini/Figure_7.png}
+    \caption{Risposta del sistema al disturbo in attenuazione.}
+    \label{fig:fig7}
+\end{figure}
+Osserviamo che l'attenuazione ottenuta è superiore ai $30$ dB richiesti dalla specifica 5) nella banda 
+
+$[0, 0.5]$ rad/s.
+
+\vspace{1em} 
+
+In seguito, valutiamo la capacità del sistema di attenuare il rumore di misura $n(t)$, composto da 
+
+quattro armoniche ad alta frequenza ($\omega_n = 5 \cdot 10^4$ rad/s e multipli). La risposta $y_n(t) = -F(s) \cdot n(t)$ 
+
+è mostrata in Figura~\ref{fig:fig8}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{immagini/Figure_8.png}
+    \caption{Risposta del sistema al rumore di misura}
+    \label{fig:fig8}
+\end{figure}
+
+Notiamo che l'uscita $y_n(t)$ presenta un'attenuazione superiore ai $65$ dB richiesti dalla specifica 6) 
+
+nella banda $[5 \cdot 10^4, 5 \cdot 10^6]$ rad/s. Questo è dovuto al polo in alta frequenza inserito nel regolatore, 
+
+che si comporta con un filtro passa-basso che elimina tutte le frequenze superiori alla banda passante
+
+del sistema, in questo modo il rumore non si propaga in uscita.
+
+\vspace{1em} 
+
+Per valutare le prestazioni complessive del sistema in condizioni operative realistiche, consideriamo 
+
+la risposta totale ottenuta come somma dei tre contributi:
+\begin{equation}
+    y_{tot}(t) = y_w(t) + y_d(t) + y_n(t)
+\end{equation}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{immagini/Figure_9.png}
+    \caption{Risposta totale del sistema in presenza di riferimento, disturbo e rumore}
+    \label{fig:fig9}
+\end{figure}
+
+Da Figura \ref{fig:fig9} notiamo che l'uscita totale soddisfa i vincoli relativi alla sovraelongazione percentuale e 
+
+al tempo di assestamento. È importante notare che, nonostante la presenza di disturbi a bassa 
+
+frequenza e rumore ad alta frequenza, l'effetto combinato sulla risposta totale risulta trascurabile 
+
+grazie alle elevate attenuazioni garantite rispettivamente dalla 
+
+funzione di sensitività $S(s)$ e dalla funzione di sensitività complementare $F(s)$ nelle rispettive bande 
+
+di frequenza critiche.
+
+\section{Test sul sistema non lineare}
+
+In questa sezione, testiamo l’efficacia del controllore progettato sul modello non lineare con l’idea di 
+
+applicare al sistema reale il regolatore sintetizzato sul modello linearizzato. Il controllore $R(s)$ opera 
+
+sulle variabili alle variazioni: riceve in ingresso l’errore
+\[
+e(t) = \tilde y(t) - w(t) \approx \Delta y(t) - w(t)
+\]
+
+e genera come uscita una variazione di controllo
+\[
+\tilde u(t) \approx \Delta u(t).
+\]
+
+Poiché il sistema non lineare lavora con le variabili originali, l’ingresso effettivamente applicato è 
+
+ricostruito come
+\[
+u(t) = u_e + \tilde u(t).
+\]
+
+In questo modo il regolatore risulta coerente con il sistema reale, purché il funzionamento avvenga in 
+
+un intorno del punto di equilibrio, dove l’approssimazione di linearizzazione è valida. \\
+
+In Figura \ref{fig:fig10}, mostriamo lo schema a blocchi del sistema non lineare in anello chiuso.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{immagini/Figure_10.png}
+    \caption{Schema a blocchi del sistema in anello chiuso.}
+    \label{fig:fig10}
+\end{figure}
+
+
+Di seguito è riportato, in Figura \ref{fig:fig11}, l'andamento temporale dell'uscita del sistema in risposta a un 
+
+ingresso a gradino di ampiezza unitaria considerando i disturbi $n(t)$ e $d(t)$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{immagini/Figure_11.png}
+    \caption{\centering Risposta del sistema non lineare in anello chiuso: andamento dell'uscita in presenza del riferimento e dei disturbi.}
+    \label{fig:fig11}
+\end{figure}
+
+
+Si nota che l'uscita del sistema raggiunge il valore di regime in modo compatibile con le specifiche di 
+
+progetto sull'errore a regime poste nella fase di sintesi del controllore.
+
+La coerenza riscontrata tra i risultati delle simulazioni sul sistema linearizzato e quelle sul sistema 
+
+non linearizzato conferma l'efficacia della linearizzazione nell'intorno del punto di equilibrio $\theta_e = \pi/3$. 
+
+Il tempo di assestamento rimane rapido, il sistema non presenta sovraelongazioni marcate e il rumore 
+
+ad alta frequenza $n(t)$ risulta ben attenuato con un impatto sull'uscita finale trascurabile.
+La stabilità 
+
+globale del sistema è quindi preservata anche in presenza della variazione periodica del momento 
+
+d'inerzia $J(\theta)$.\\
+
+Come da richiesta, fissato il riferimento a gradino
+$w(t)=1(t)$, è stato analizzato il comportamento 
+
+del sistema non lineare in anello chiuso al variare delle condizioni iniziali dello stato nell’intorno del 
+
+punto di equilibrio
+\[
+x_e=\begin{bmatrix}\theta_e\\0\end{bmatrix}, \qquad \theta_e=\pi/3.
+\]
+
+Il valore di regime dell’uscita in presenza del gradino unitario risulta, nel caso base \(x(0)=x_e\), pari a
+\[
+y_{\infty,\text{base}} \simeq 2.043\ \text{rad},
+\]
+
+con un errore a regime \(|e_\infty|\approx 0.004\ \text{rad}\), inferiore alla soglia di tolleranza assegnata di \(0.04\ \text{rad}\).
+
+Sono quindi state esplorate le condizioni iniziali dello stato
+\[
+x(0)=
+\begin{bmatrix}
+\theta(0)\\
+\omega(0)
+\end{bmatrix}
+=
+\begin{bmatrix}
+\theta_e+\Delta\theta\\
+\omega_e +\Delta\omega
+\end{bmatrix},
+\]
+
+verificando, tramite simulazioni del modello non lineare in anello chiuso, la convergenza dell’uscita 
+
+allo stesso valore di regime e il rispetto della specifica sull’errore a regime.
+
+In particolare, mantenendo \(\omega(0)=0\), e tenendo in considerazione che $\theta_e = \pi/3$ si è osservata 
+
+convergenza e rispetto della condizione \(|e_\infty|<0.04\ \text{rad}\) per:
+\[
+\theta(0)\in[\theta_e-29,\ \theta_e+28]\ \text{rad}.
+\]
+
+
+Analogamente, mantenendo \(\theta(0)=\theta_e\), e tenendo in considerazione che $\omega_e = 0$, si è verificato che il 
+
+sistema converge correttamente per:
+\[
+\omega(0)\in[\omega_e-30,\ \omega_e+ 30]\ \text{rad/s}.
+\]
+
+Tali risultati forniscono una stima numerica della regione di attrazione locale del punto di equilibrio 
+
+in anello chiuso nel piano delle condizioni iniziali \((\theta(0),\omega(0))\), all’interno della quale l’uscita del sistema 
+
+non lineare converge al valore di regime associato al riferimento applicato e l’errore a regime soddisfa 
+
+la specifica assegnata.
+
+Come da richiesta, supponendo un riferimento $w(t) = W \cdot1(t)$, è stato esplorato il range di ampiezza 
+
+di
+riferimenti a gradino tali per cui il controllore rimane efficace sul sistema non lineare. Si è appurato 
+
+che l'ampiezza debba rientrare nel seguente intervallo $ W \in [ -3 ; 3]$ rad affinché l'errore a regime $|e_{\infty}|$ 
+
+rimanga al di sotto della soglia di tolleranza pari a 0.04 rad.
+
+
+Concludendo, possiamo affermare che il regolatore progettato si è dimostrato robusto, garantendo 
+
+il soddisfacimento delle specifiche non solo nel caso del modello linearizzato, ma anche a fronte della 
+
+dinamica non lineare completa del sistema reale.
+\\
+
+\section{Conclusioni}
+
+Il progetto ha affrontato il problema del controllo di un meccanismo non lineare attuato. A partire 
+
+dal modello non lineare, il sistema è stato espresso in forma di stato e linearizzato intorno a un punto 
+
+di equilibrio assegnato, ottenendo così un sistema lineare tempo invariante per la sintesi del controllore.
+
+L’analisi del sistema linearizzato ha evidenziato la necessità dell’impiego di un regolatore in 
+
+retroazione. La progettazione è stata condotta in frequenza, traducendo le specifiche temporali e di 
+
+reiezione dei disturbi in vincoli sul diagramma di Bode della funzione di anello.
+
+Il controllore è stato progettato combinando un regolatore statico, volto a soddisfare le specifiche 
+
+sull’errore a regime e sull’attenuazione dei disturbi a bassa frequenza, con un regolatore dinamico 
+
+anticipatore e un polo ad alta frequenza, al fine di garantire un adeguato margine di fase, un tempo 
+
+di assestamento compatibile e una forte attenuazione del rumore di misura.
+
+Le simulazioni sul sistema linearizzato confermano il rispetto delle specifiche assegnate, mostrando 
+
+una buona rapidità di risposta e un’efficace reiezione delle perturbazioni. L’applicazione del controllore 
+
+al modello non lineare evidenzia che, nonostante la natura locale della linearizzazione, i risultati hanno 
+
+confermato una marcata coerenza tra il comportamento del modello semplificato e quello della 
+
+dinamica reale. I test condotti hanno inoltre dimostrato la robustezza del regolatore a fronte di 
+
+variazioni del riferimento, evidenziando la capacità del controllo di gestire efficacemente le non 
+
+linearità intrinseche del meccanismo in un ampio intervallo operativo ($W \in [-3, 3]$ rad).
+
+\end{document}
